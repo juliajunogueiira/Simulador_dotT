@@ -1,32 +1,98 @@
 # Simulador_dotT (WPF)
 
-Simulador de robô seguidor de linha com controle PID, desenvolvido em **.NET + WPF**.
+## Resumo
 
-O projeto permite ajustar parâmetros de controle em tempo real, acompanhar telemetria, medir voltas e aplicar sugestões automáticas de tuning.
+Este projeto apresenta um simulador de robô seguidor de linha com controle PID e modelagem de acionamento por PWM, implementado em .NET (WPF). O objetivo é reproduzir, em ambiente de simulação, aspectos de controle e dinâmica observados em plataformas reais: erro de rastreamento, atuação diferencial dos motores, limitação física de resposta e avaliação por voltas.
 
-## Funcionalidades
+## Objetivo da Pesquisa
 
-- Modos de operação: `Standby`, `MotorTestLeft`, `MotorTestRight`, `Calibration`, `FreeRace`, `Test3Laps`, `Official`
-- Ajuste em tempo real de:
-  - `KP`
-  - `KI`
-  - `KD`
-  - `KSLIP`
-  - velocidade base
-- Renderização da pista, linha de largada, robô e sensores
-- Telemetria em tempo real (erro e correção PID)
-- Simulação de motores com PWM (duty cycle, dead zone e inércia)
-- Gerenciamento de voltas (tempo atual, melhor volta, histórico)
-- Sugestões automáticas de ajuste PID com aplicação direta na interface
+Investigar o comportamento de um seguidor de linha sob variações de parâmetros de controle e de acionamento, com foco em:
 
-## Requisitos
+- estabilidade de rastreamento;
+- tempo de volta;
+- robustez frente a saturação e não-linearidades de motor;
+- aproximação entre simulação e comportamento embarcado.
+
+## Metodologia de Desenvolvimento
+
+O desenvolvimento foi conduzido em camadas, de forma incremental:
+
+1. **Modelagem geométrica da pista** com curva fechada e parâmetro contínuo de progresso $T \in [0,1]$.
+2. **Modelagem cinemática do robô diferencial** (posição, orientação e sensores virtuais).
+3. **Controle PID** com anti-windup e diagnóstico de oscilação.
+4. **Gerenciamento de voltas** com detecção de cruzamento em linha de largada e interpolação temporal.
+5. **Telemetria e análise** (erro, correção, velocidades e histórico de voltas).
+6. **Camada PWM** para representar melhor a resposta de motores DC reais.
+7. **Interface WPF** para operação, ajuste de parâmetros e visualização dos resultados em tempo real.
+
+## Implementação Técnica
+
+### Arquitetura de Módulos
+
+- `MainWindow.xaml` / `MainWindow.xaml.cs`: interface e interação do usuário
+- `Core/SimulationEngine.cs`: orquestração da simulação
+- `Controllers/PIDController.cs`: cálculo de correção PID
+- `Models/Robot.cs`: dinâmica diferencial e sensores
+- `Models/Track.cs`: geração da pista e progressão
+- `Models/LapManager.cs`: cronometragem e voltas
+- `Utils/GraficoDataCollector.cs`: coleta de dados
+- `Utils/PIDDiagnostico.cs`: sugestões automáticas de tuning
+- `Utils/PWMSimulator.cs`: modelo PWM (duty cycle, dead zone, não-linearidade, inércia)
+
+### Controle PID
+
+O controlador utiliza a forma clássica:
+
+$$
+u(t) = K_P e(t) + K_I \int e(t)dt + K_D \frac{de(t)}{dt}
+$$
+
+com limitação da integral (anti-windup) e aplicação condicional de `KSLIP` para cenários de maior desvio.
+
+### Camada PWM (Implementação Adicionada)
+
+A integração PWM foi implementada para substituir o acoplamento direto entre saída de controle e velocidade de motor.
+
+Fluxo de atuação:
+
+1. `SimulationEngine` gera velocidades alvo de cada roda;
+2. velocidades alvo são convertidas para duty cycle (`0-100%`);
+3. `PWMSimulator` aplica:
+   - **dead zone** (abaixo do limiar o motor não gira);
+   - **curva não-linear** de conversão duty → velocidade;
+   - **inércia/aceleração limitada** por ciclo de atualização;
+4. velocidades efetivas são aplicadas ao `Robot`.
+
+## O que Deve Acontecer (Comportamento Esperado)
+
+Com base na implementação atual, o comportamento esperado do sistema é:
+
+- rastrear a pista mantendo erro baixo em regimes estáveis;
+- reduzir oscilações por amortecimento derivativo e limitação de atuação;
+- exibir PWM esquerdo/direito em tempo real para análise de saturação;
+- registrar voltas, melhor volta e evolução temporal de desempenho;
+- permitir ajustes manuais e assistidos (`PIDDiagnostico`) para convergência de parâmetros.
+
+## Resultados Obtidos no Desenvolvimento
+
+Durante o desenvolvimento e validação desta versão, foram obtidos os seguintes resultados práticos:
+
+- **migração concluída para WPF**, mantendo os principais recursos do simulador;
+- **integração de PWM concluída** no pipeline de atuação dos motores;
+- **indicadores visuais de PWM** adicionados na interface;
+- **projeto compilando com sucesso** após integração (`dotnet build`);
+- **publicação no GitHub concluída** com histórico sincronizado.
+
+Observação: os resultados acima se referem ao estado de engenharia e integração funcional do projeto. Para relatório experimental quantitativo (ex.: médias de tempo por configuração PID), recomenda-se executar campanhas de teste controladas por modo de operação.
+
+## Requisitos e Execução
+
+### Requisitos
 
 - Windows
 - .NET SDK com suporte a `net10.0-windows`
 
-## Como executar
-
-No diretório do projeto:
+### Execução
 
 ```powershell
 dotnet restore
@@ -34,66 +100,15 @@ dotnet build .\Simulador_dotT.csproj
 dotnet run --project Simulador_dotT.csproj
 ```
 
-Se preferir executar o binário compilado:
+Binário compilado:
 
 ```powershell
 .\bin\Debug\net10.0-windows\Simulador_dotT.exe
 ```
 
-## Estrutura do projeto
+## Limitações e Trabalhos Futuros
 
-- `MainWindow.xaml` / `MainWindow.xaml.cs`: interface WPF e interação do usuário
-- `Core/SimulationEngine.cs`: motor principal da simulação
-- `Controllers/PIDController.cs`: lógica do controlador PID
-- `Models/`
-  - `Robot.cs`: cinemática e sensores do robô
-  - `Track.cs`: geração da pista e progresso
-  - `LapManager.cs`: detecção e gestão de voltas
-- `Utils/`
-  - `GraficoDataCollector.cs`: coleta de telemetria
-  - `PIDDiagnostico.cs`: geração de sugestões de ajuste
-  - `PWMSimulator.cs`: conversão PWM ↔ velocidade e inércia dos motores
-  - `RankingStorage.cs`: persistência de resultados
-
-## Arquitetura PWM
-
-O projeto agora inclui uma camada de simulação de PWM para aproximar o comportamento de hardware real de motores DC.
-
-### Como funciona
-
-1. O `PIDController` calcula a correção de trajetória como antes.
-2. O `SimulationEngine` converte velocidades alvo dos motores em **duty cycle PWM**.
-3. O `PWMSimulator` aplica:
-   - **Dead zone**: PWM abaixo do limiar não movimenta o motor.
-   - **Curva não-linear**: resposta de velocidade não é linear com o duty cycle.
-   - **Inércia**: velocidade varia gradualmente (limite de aceleração por ciclo).
-4. A velocidade final é aplicada ao `Robot` para atualização da cinemática.
-
-### Indicadores na interface
-
-A tela principal exibe:
-
-- `PWM Left` (% de duty cycle do motor esquerdo)
-- `PWM Right` (% de duty cycle do motor direito)
-
-Esses indicadores ajudam a visualizar quando o controle está saturando, operando perto da dead zone ou estabilizado.
-
-### Benefícios
-
-- Maior realismo para validação de lógica de controle
-- Melhor aproximação com firmware embarcado baseado em PWM
-- Facilidade para depuração de saturação e sensibilidade de PID
-- Base mais didática para estudo de controle de motores
-
-## Fluxo básico de uso
-
-1. Selecione o modo em **Operational Mode**.
-2. Clique em **Start** para iniciar.
-3. Ajuste `KP/KI/KD/KSLIP` e velocidade base conforme o comportamento.
-4. Acompanhe status, progresso, tempos de volta e sugestões.
-5. Use **Aplicar Sugestões** para tuning assistido.
-
-## Observações
-
-- A área da pista está configurada com fundo branco para melhor contraste visual.
-- O build deve estar sem erros para o WPF carregar corretamente os handlers do XAML.
+- modelagem dinâmica ainda simplificada (sem atrito detalhado e carga variável);
+- ausência de protocolo estatístico automatizado para comparação entre tunings;
+- possibilidade de expansão para exportação de telemetria e análise offline;
+- possibilidade de calibração automática de ganhos com busca heurística ou otimização.
