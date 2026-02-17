@@ -56,10 +56,6 @@ public class SimulationEngine
     public double MotorTestSpeed { get; set; } = 120;
     public double LeftPWMDuty { get; private set; } = 0;
     public double RightPWMDuty { get; private set; } = 0;
-    public bool AutoTuneEnabled { get; set; } = true;
-    public int AutoTuneIntervalTicks { get; set; } = 10;
-
-    private int autoTuneTickCounter = 0;
 
     public event EventHandler? SimulationUpdated;
 
@@ -124,8 +120,6 @@ public class SimulationEngine
         }
 
         PidAdjustmentsLocked = Mode == OperationMode.Official;
-        AutoTuneEnabled = Mode == OperationMode.FreeRace || Mode == OperationMode.Test3Laps;
-        autoTuneTickCounter = 0;
 
         if (Mode == OperationMode.Standby)
         {
@@ -265,9 +259,6 @@ public class SimulationEngine
         // 4. Calcular correção PID
         double pidCorrection = PIDController.Calculate(error, UpdateRate);
 
-        // 4.1 Autoajuste opcional dos ganhos PID durante corrida
-        TryAutoTune(error);
-
         // 5. Aplicar aos motores (motores diferenciais)
         double leftMotorCorrection = pidCorrection * (BaseVelocity / 100.0);
         double rightMotorCorrection = pidCorrection * (BaseVelocity / 100.0);
@@ -371,32 +362,6 @@ public class SimulationEngine
 
         Robot.VelLeft = PWMSimulator.ApplyInertia(Robot.VelLeft, leftTargetFromPwm, UpdateRate);
         Robot.VelRight = PWMSimulator.ApplyInertia(Robot.VelRight, rightTargetFromPwm, UpdateRate);
-    }
-
-    /// <summary>
-    /// Aplica autoajuste gradual de ganhos PID durante corrida.
-    /// </summary>
-    private void TryAutoTune(double error)
-    {
-        if (!AutoTuneEnabled || PidAdjustmentsLocked)
-            return;
-
-        if (Mode != OperationMode.FreeRace && Mode != OperationMode.Test3Laps)
-            return;
-
-        autoTuneTickCounter++;
-        if (autoTuneTickCounter < Math.Max(1, AutoTuneIntervalTicks))
-            return;
-
-        autoTuneTickCounter = 0;
-
-        bool derrapagem = Math.Abs(error) > 5;
-        PIDController.AutoAjustar(error, derrapagem);
-
-        PIDController.KP = Math.Clamp(PIDController.KP, 0, 5.0);
-        PIDController.KI = Math.Clamp(PIDController.KI, 0, 5.0);
-        PIDController.KD = Math.Clamp(PIDController.KD, 0, 5.0);
-        PIDController.KSLIP = Math.Clamp(PIDController.KSLIP, 0, 5.0);
     }
 
     /// <summary>
