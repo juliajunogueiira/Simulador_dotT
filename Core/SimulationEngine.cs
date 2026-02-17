@@ -26,6 +26,7 @@ public class SimulationEngine
     public Track Track { get; private set; }
     public LapManager LapManager { get; private set; }
     public GraficoDataCollector DataCollector { get; private set; }
+    public PWMSimulator PWMSimulator { get; private set; }
 
     // Configurações
     public double BaseVelocity { get; set; } = 200; // pixels/ms (velocidade base)
@@ -53,6 +54,8 @@ public class SimulationEngine
     public OperationMode Mode { get; private set; } = OperationMode.Standby;
     public bool PidAdjustmentsLocked { get; private set; } = false;
     public double MotorTestSpeed { get; set; } = 120;
+    public double LeftPWMDuty { get; private set; } = 0;
+    public double RightPWMDuty { get; private set; } = 0;
 
     public event EventHandler? SimulationUpdated;
 
@@ -63,6 +66,7 @@ public class SimulationEngine
         Track = new Track(canvasWidth, canvasHeight, Track.TrackStyle.Custom);
         LapManager = new LapManager();
         DataCollector = new GraficoDataCollector();
+        PWMSimulator = new PWMSimulator();
 
         // Evento quando uma volta é completada
         LapManager.LapCompleted += (record) =>
@@ -180,6 +184,8 @@ public class SimulationEngine
         IsPaused = false;
         Robot.VelLeft = 0;
         Robot.VelRight = 0;
+        LeftPWMDuty = 0;
+        RightPWMDuty = 0;
         Robot.LinearVel = 0;
         Robot.AngularVel = 0;
         PIDController.Reset();
@@ -199,6 +205,8 @@ public class SimulationEngine
         {
             Robot.VelLeft = 0;
             Robot.VelRight = 0;
+            LeftPWMDuty = 0;
+            RightPWMDuty = 0;
             SimulationUpdated?.Invoke(this, EventArgs.Empty);
             return;
         }
@@ -212,8 +220,7 @@ public class SimulationEngine
 
         if (Mode == OperationMode.MotorTestLeft)
         {
-            Robot.VelLeft = MotorTestSpeed;
-            Robot.VelRight = 0;
+            ApplyMotorCommand(MotorTestSpeed, 0);
             Robot.Update(UpdateRate);
             SimulationUpdated?.Invoke(this, EventArgs.Empty);
             return;
@@ -221,8 +228,7 @@ public class SimulationEngine
 
         if (Mode == OperationMode.MotorTestRight)
         {
-            Robot.VelLeft = 0;
-            Robot.VelRight = MotorTestSpeed;
+            ApplyMotorCommand(0, MotorTestSpeed);
             Robot.Update(UpdateRate);
             SimulationUpdated?.Invoke(this, EventArgs.Empty);
             return;
@@ -257,12 +263,10 @@ public class SimulationEngine
         double leftMotorCorrection = pidCorrection * (BaseVelocity / 100.0);
         double rightMotorCorrection = pidCorrection * (BaseVelocity / 100.0);
 
-        Robot.VelLeft = BaseVelocity - leftMotorCorrection;
-        Robot.VelRight = BaseVelocity + rightMotorCorrection;
+        var targetLeftSpeed = Math.Clamp(BaseVelocity - leftMotorCorrection, 0, BaseVelocity * 1.5);
+        var targetRightSpeed = Math.Clamp(BaseVelocity + rightMotorCorrection, 0, BaseVelocity * 1.5);
 
-        // Limitar velocidades
-        Robot.VelLeft = Math.Clamp(Robot.VelLeft, 0, BaseVelocity * 1.5);
-        Robot.VelRight = Math.Clamp(Robot.VelRight, 0, BaseVelocity * 1.5);
+        ApplyMotorCommand(targetLeftSpeed, targetRightSpeed);
 
         // 6. Atualizar física do robô
         Robot.Update(UpdateRate);
@@ -341,6 +345,23 @@ public class SimulationEngine
             LeftVelHistory.RemoveAt(0);
             RightVelHistory.RemoveAt(0);
         }
+    }
+
+    /// <summary>
+    /// Converte velocidade alvo em PWM e aplica resposta de motor com inércia.
+    /// </summary>
+    private void ApplyMotorCommand(double targetLeftSpeed, double targetRightSpeed)
+    {
+        var maxSpeed = Math.Max(1, BaseVelocity * 1.5);
+
+        LeftPWMDuty = PWMSimulator.SpeedToPWM(targetLeftSpeed, maxSpeed);
+        RightPWMDuty = PWMSimulator.SpeedToPWM(targetRightSpeed, maxSpeed);
+
+        var leftTargetFromPwm = PWMSimulator.PWMToSpeed(LeftPWMDuty, maxSpeed);
+        var rightTargetFromPwm = PWMSimulator.PWMToSpeed(RightPWMDuty, maxSpeed);
+
+        Robot.VelLeft = PWMSimulator.ApplyInertia(Robot.VelLeft, leftTargetFromPwm, UpdateRate);
+        Robot.VelRight = PWMSimulator.ApplyInertia(Robot.VelRight, rightTargetFromPwm, UpdateRate);
     }
 
     /// <summary>

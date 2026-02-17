@@ -63,6 +63,18 @@
                 <TextBlock x:Name="ErrorText" Margin="0,0,0,2" />
                 <TextBlock x:Name="CorrectionText" Margin="0,0,0,10" />
 
+                <TextBlock Text="PWM Motors" FontWeight="Bold" Margin="0,0,0,4" />
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock Text="Left:" Width="50" VerticalAlignment="Center" />
+                    <ProgressBar x:Name="PWMLeftBar" Width="150" Height="20" Minimum="0" Maximum="100" />
+                    <TextBlock x:Name="PWMLeftValue" Margin="6,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="Right:" Width="50" VerticalAlignment="Center" />
+                    <ProgressBar x:Name="PWMRightBar" Width="150" Height="20" Minimum="0" Maximum="100" />
+                    <TextBlock x:Name="PWMRightValue" Margin="6,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+
                 <TextBlock Text="🏁 LAP TIMING" FontSize="15" FontWeight="Bold" Margin="0,0,0,8" />
                 <TextBlock x:Name="LapStatusText" Margin="0,0,0,4" />
                 <TextBlock x:Name="ProgressText" Margin="0,0,0,4" />

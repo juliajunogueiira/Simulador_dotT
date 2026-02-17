@@ -307,6 +307,10 @@ public partial class MainWindow : Window
         RightVelText.Text = $"Vel Dir: {simulationEngine.Robot.VelRight:F1} px/ms";
         ErrorText.Text = $"Erro: {simulationEngine.Robot.TrackingError:F2} px";
         CorrectionText.Text = $"Correção PID: {simulationEngine.PIDController.LastCorrection:F2}";
+        PWMLeftBar.Value = simulationEngine.LeftPWMDuty;
+        PWMRightBar.Value = simulationEngine.RightPWMDuty;
+        PWMLeftValue.Text = $"{simulationEngine.LeftPWMDuty:F1}%";
+        PWMRightValue.Text = $"{simulationEngine.RightPWMDuty:F1}%";
 
         LapStatusText.Text = simulationEngine.GetLapStatus();
         ProgressText.Text = $"Progresso: {(int)(simulationEngine.TrackProgress * 100)}%";
