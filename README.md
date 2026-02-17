@@ -15,6 +15,7 @@ O projeto permite ajustar parâmetros de controle em tempo real, acompanhar tele
   - velocidade base
 - Renderização da pista, linha de largada, robô e sensores
 - Telemetria em tempo real (erro e correção PID)
+- Simulação de motores com PWM (duty cycle, dead zone e inércia)
 - Gerenciamento de voltas (tempo atual, melhor volta, histórico)
 - Sugestões automáticas de ajuste PID com aplicação direta na interface
 
@@ -51,7 +52,38 @@ Se preferir executar o binário compilado:
 - `Utils/`
   - `GraficoDataCollector.cs`: coleta de telemetria
   - `PIDDiagnostico.cs`: geração de sugestões de ajuste
+  - `PWMSimulator.cs`: conversão PWM ↔ velocidade e inércia dos motores
   - `RankingStorage.cs`: persistência de resultados
+
+## Arquitetura PWM
+
+O projeto agora inclui uma camada de simulação de PWM para aproximar o comportamento de hardware real de motores DC.
+
+### Como funciona
+
+1. O `PIDController` calcula a correção de trajetória como antes.
+2. O `SimulationEngine` converte velocidades alvo dos motores em **duty cycle PWM**.
+3. O `PWMSimulator` aplica:
+   - **Dead zone**: PWM abaixo do limiar não movimenta o motor.
+   - **Curva não-linear**: resposta de velocidade não é linear com o duty cycle.
+   - **Inércia**: velocidade varia gradualmente (limite de aceleração por ciclo).
+4. A velocidade final é aplicada ao `Robot` para atualização da cinemática.
+
+### Indicadores na interface
+
+A tela principal exibe:
+
+- `PWM Left` (% de duty cycle do motor esquerdo)
+- `PWM Right` (% de duty cycle do motor direito)
+
+Esses indicadores ajudam a visualizar quando o controle está saturando, operando perto da dead zone ou estabilizado.
+
+### Benefícios
+
+- Maior realismo para validação de lógica de controle
+- Melhor aproximação com firmware embarcado baseado em PWM
+- Facilidade para depuração de saturação e sensibilidade de PID
+- Base mais didática para estudo de controle de motores
 
 ## Fluxo básico de uso
 
