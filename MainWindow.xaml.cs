@@ -14,12 +14,8 @@ public partial class MainWindow : Window
 {
     private const double KpMin = 0;
     private const double KpMax = 5.0;
-    private const double KiMin = 0;
-    private const double KiMax = 5.0;
     private const double KdMin = 0;
     private const double KdMax = 5.0;
-    private const double KSlipMin = 0;
-    private const double KSlipMax = 5.0;
     private const double VelMin = 100;
     private const double VelMax = 4000;
 
@@ -60,9 +56,7 @@ public partial class MainWindow : Window
         simulationEngine.SetMode(SimulationEngine.OperationMode.Standby);
 
         KpSlider.Value = simulationEngine.PIDController.KP * 100;
-        KiSlider.Value = simulationEngine.PIDController.KI * 1000;
         KdSlider.Value = simulationEngine.PIDController.KD * 100;
-        KslipSlider.Value = simulationEngine.PIDController.KSLIP * 1000;
         BaseVelSlider.Value = simulationEngine.BaseVelocity;
 
         LapHistoryTextBox.Text = "Histórico de voltas:\n";
@@ -196,16 +190,6 @@ public partial class MainWindow : Window
         UpdatePidLabels();
     }
 
-    private void KiSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-    {
-        if (isInitializing || simulationEngine.PidAdjustmentsLocked)
-        {
-            return;
-        }
-
-        simulationEngine.PIDController.KI = KiSlider.Value / 1000.0;
-        UpdatePidLabels();
-    }
 
     private void KdSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
@@ -218,16 +202,6 @@ public partial class MainWindow : Window
         UpdatePidLabels();
     }
 
-    private void KslipSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-    {
-        if (isInitializing || simulationEngine.PidAdjustmentsLocked)
-        {
-            return;
-        }
-
-        simulationEngine.PIDController.KSLIP = KslipSlider.Value / 1000.0;
-        UpdatePidLabels();
-    }
 
     private void BaseVelSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
@@ -261,10 +235,6 @@ public partial class MainWindow : Window
                     KpSlider.Value = simulationEngine.PIDController.KP * 100;
                     break;
 
-                case PIDDiagnostico.Parametro.Ki:
-                    simulationEngine.PIDController.KI = Math.Clamp(simulationEngine.PIDController.KI * fator, KiMin, KiMax);
-                    KiSlider.Value = simulationEngine.PIDController.KI * 100;
-                    break;
 
                 case PIDDiagnostico.Parametro.Kd:
                     simulationEngine.PIDController.KD = Math.Clamp(simulationEngine.PIDController.KD * fator, KdMin, KdMax);
@@ -329,9 +299,7 @@ public partial class MainWindow : Window
     private void UpdatePidLabels()
     {
         KpValueText.Text = $"KP: {simulationEngine.PIDController.KP:F2}";
-        KiValueText.Text = $"KI: {simulationEngine.PIDController.KI:F3}";
         KdValueText.Text = $"KD: {simulationEngine.PIDController.KD:F2}";
-        KslipValueText.Text = $"KSLIP: {simulationEngine.PIDController.KSLIP:F3}";
         BaseVelValueText.Text = $"Vel Base: {simulationEngine.BaseVelocity:F0} px/ms";
     }
 
@@ -339,9 +307,7 @@ public partial class MainWindow : Window
     {
         var pidLocked = simulationEngine.PidAdjustmentsLocked;
         KpSlider.IsEnabled = !pidLocked;
-        KiSlider.IsEnabled = !pidLocked;
         KdSlider.IsEnabled = !pidLocked;
-        KslipSlider.IsEnabled = !pidLocked;
         BaseVelSlider.IsEnabled = !pidLocked;
     }
 
@@ -400,7 +366,6 @@ public partial class MainWindow : Window
             var parametro = sugestao.Parametro switch
             {
                 PIDDiagnostico.Parametro.Kp => "KP",
-                PIDDiagnostico.Parametro.Ki => "KI",
                 PIDDiagnostico.Parametro.Kd => "KD",
                 PIDDiagnostico.Parametro.VelBase => "VEL",
                 _ => "?"

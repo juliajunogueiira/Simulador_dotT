@@ -77,22 +77,19 @@ public class PIDConfigRecord
     [JsonPropertyName("kp")]
     public double Kp { get; set; }
 
-    [JsonPropertyName("ki")]
-    public double Ki { get; set; }
+        [JsonPropertyName("kd")]
+        public double Kd { get; set; }
 
-    [JsonPropertyName("kd")]
-    public double Kd { get; set; }
+        [JsonPropertyName("velocidadeBase")]
+        public double VelocidadeBase { get; set; }
 
-    [JsonPropertyName("velocidadeBase")]
-    public double VelocidadeBase { get; set; }
+        public PIDConfigRecord() { }
 
-    public PIDConfigRecord() { }
-
-    public PIDConfigRecord(double kp, double ki, double kd, double velocidadeBase)
-    {
-        Kp = kp;
-        Ki = ki;
-        Kd = kd;
-        VelocidadeBase = velocidadeBase;
+        public PIDConfigRecord(double kp, double kd, double velocidadeBase)
+        {
+            Kp = kp;
+            Kd = kd;
+            VelocidadeBase = velocidadeBase;
+        }
     }
-}
+

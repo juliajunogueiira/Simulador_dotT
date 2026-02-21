@@ -8,7 +8,7 @@ namespace Simulador_dot.Utils;
 /// </summary>
 public class PIDDiagnostico
 {
-    public enum Parametro { Kp, Ki, Kd, VelBase }
+    public enum Parametro { Kp, Kd, VelBase }
     public enum Acao { Aumentar, Reduzir }
 
     public class Sugestao
@@ -85,14 +85,15 @@ public class PIDDiagnostico
             });
         }
 
-        // Diagnóstico 4: Erro persistente (integral)
+        // Diagnóstico 4: Erro persistente (sem integral disponível)
         if (erroMedio > 10 && oscilacao < 5)
         {
+            // sem termo integral, sugerimos ajustar proporcional
             sugestoes.Add(new Sugestao
             {
-                Parametro = Parametro.Ki,
+                Parametro = Parametro.Kp,
                 Acao = Acao.Aumentar,
-                Motivo = "Erro persistente com comportamento estável. Aumentar integral.",
+                Motivo = "Erro persistente com comportamento estável. Ajustar proporcional.",
                 PercentualSugerido = 10
             });
         }

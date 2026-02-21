@@ -391,8 +391,8 @@ public class SimulationEngine
                 PIDConfig = new PIDConfigRecord
                 {
                     Kp = PIDController.KP,
-                    Ki = PIDController.KI,
-                    Kd = PIDController.KD
+                    Kd = PIDController.KD,
+                    VelocidadeBase = BaseVelocity
                 },
                 ErroMedio = DataCollector.CalcularErroMedio(),
                 VelocidadeMedia = DataCollector.CalcularVelocidadeMedia(),

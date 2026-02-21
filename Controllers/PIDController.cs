@@ -7,16 +7,10 @@ public class PIDController
 {
     // Parâmetros ajustáveis
     public double KP { get; set; } = 3.2;      // Ganho proporcional
-    public double KI { get; set; } = 0.16;     // Ganho integral
     public double KD { get; set; } = 0.85;     // Ganho derivativo
-    public double KSLIP { get; set; } = 0.08;  // Fator de derrapagem
 
     // Histórico para cálculo derivativo
     private double lastError = 0;
-    private double accumulatedError = 0;
-
-    // Anti-windup
-    public double IntegralLimit { get; set; } = 50; // Limite da integral
 
     // Saída do controlador
     public double LastCorrection { get; set; } = 0;
@@ -35,46 +29,34 @@ public class PIDController
         // Termo Proporcional: P = KP * error
         double proportional = KP * error;
 
-        // Termo Integral: I = KI * Σ(error * dt) com anti-windup
-        accumulatedError += error * dt;
-
-        // Anti-windup: limitar integral
-        if (accumulatedError > IntegralLimit)
-            accumulatedError = IntegralLimit;
-        else if (accumulatedError < -IntegralLimit)
-            accumulatedError = -IntegralLimit;
-
-        double integral = KI * accumulatedError;
-
         // Termo Derivativo: D = KD * (error - lastError) / dt
         double derivative = 0;
         if (dt > 0)
         {
+            // basic PD derivative
             derivative = KD * (error - lastError) / dt;
         }
 
-        // Saída PID
-        LastCorrection = proportional + integral + derivative;
+        // nova lógica PD: limitar magnitude para evitar correções extremas
+        var correction = proportional + derivative;
+        // opcional: usar limite absoluto razoável
+        const double maxCorrection = 1000; // evita valores absurdos
+        correction = Math.Clamp(correction, -maxCorrection, maxCorrection);
 
-        // Aplicar KSLIP condicionalmente quando erro > 2.5 (doc técnica)
-        if (Math.Abs(error) > 2.5)
-        {
-            LastCorrection *= KSLIP;
-        }
+        LastCorrection = correction;
 
-        // Armazenar erro para próxima iteração
+        // Armazenar erro para próxima iteração (para derivativo)
         lastError = error;
 
         return LastCorrection;
     }
 
     /// <summary>
-    /// Reseta o controlador (integral e histórico)
+    /// Reseta o controlador (histórico de erro)
     /// </summary>
     public void Reset()
     {
         lastError = 0;
-        accumulatedError = 0;
         LastCorrection = 0;
     }
 
@@ -87,40 +69,31 @@ public class PIDController
     }
 
     /// <summary>
-    /// Diagnóstico baseado na documentação técnica
+    /// Diagnóstico simplificado para o controlador PD
     /// </summary>
     public string GetDiagnostic(double error)
     {
         if (Math.Abs(error) < 2)
             return "✓ Rastreamento bom";
 
-        // Regras da doc técnica:
         if (IsOscillating(error, 3))
-            return "⚠ Oscilação → reduzir KP, aumentar KD";
+            return "⚠ Oscilação → reduzir KP ou aumentar KD";
 
         if (Math.Abs(error) > 10)
             return "⚠ Resposta lenta → aumentar KP";
-
-        if (Math.Abs(error) > 5)
-            return "⚠ Derrapagem → aumentar KSLIP";
 
         return "⚠ Ajuste fino necessário";
     }
 
     /// <summary>
-    /// Autoajuste baseado na documentação técnica
+    /// Autoajuste leve para PD (mantido para compatibilidade, mas pouco usado)
     /// </summary>
-    public void AutoAjustar(double error, bool derrapagem)
+    public void AutoAjustar(double error, bool _) // old parameter kept for signature
     {
         if (IsOscillating(error, 3))
         {
-            KP *= 0.9;  // Reduz oscilação
-            KD *= 1.05; // Aumenta amortecimento
-        }
-
-        if (derrapagem)
-        {
-            KSLIP *= 1.2; // Aumenta KSLIP
+            KP *= 0.9;  // reduzir oscilação
+            KD *= 1.05; // aumentar amortecimento
         }
     }
 }

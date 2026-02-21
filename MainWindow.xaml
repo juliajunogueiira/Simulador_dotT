@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Simulador de Robô PID - WPF"
+        Title="PID Line Follower Simulator"
         Height="760"
         Width="1280"
         MinHeight="680"
@@ -17,7 +17,7 @@
 
         <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="12">
-                <TextBlock Text="⚙️ PID SIMULATOR" FontSize="20" FontWeight="Bold" Margin="0,0,0,12" />
+                <TextBlock Text="⚙️ PID CONTROLLER" FontSize="20" FontWeight="Bold" Margin="0,0,0,12" />
 
                 <WrapPanel Margin="0,0,0,12">
                     <Button x:Name="StartButton" Content="Start" Width="90" Margin="0,0,8,0" Click="StartButton_Click" />
@@ -37,17 +37,9 @@
                 <Slider x:Name="KpSlider" Minimum="0" Maximum="500" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="KpSlider_ValueChanged" />
                 <TextBlock x:Name="KpValueText" Margin="0,0,0,10" />
 
-                <TextBlock Text="KI - Integral" FontWeight="Bold" />
-                <Slider x:Name="KiSlider" Minimum="0" Maximum="500" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="KiSlider_ValueChanged" />
-                <TextBlock x:Name="KiValueText" Margin="0,0,0,10" />
-
                 <TextBlock Text="KD - Derivativo" FontWeight="Bold" />
                 <Slider x:Name="KdSlider" Minimum="0" Maximum="500" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="KdSlider_ValueChanged" />
                 <TextBlock x:Name="KdValueText" Margin="0,0,0,10" />
-
-                <TextBlock Text="KSLIP - Derrapagem" FontWeight="Bold" />
-                <Slider x:Name="KslipSlider" Minimum="0" Maximum="500" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="KslipSlider_ValueChanged" />
-                <TextBlock x:Name="KslipValueText" Margin="0,0,0,10" />
 
                 <TextBlock Text="Velocidade Base" FontWeight="Bold" />
                 <Slider x:Name="BaseVelSlider" Minimum="100" Maximum="4000" TickFrequency="10" IsSnapToTickEnabled="True" ValueChanged="BaseVelSlider_ValueChanged" />
