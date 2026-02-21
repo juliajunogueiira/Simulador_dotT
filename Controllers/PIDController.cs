@@ -6,14 +6,8 @@ namespace Simulador_dot.Controllers;
 public class PIDController
 {
     // Parâmetros ajustáveis
-    public double KP { get; set; } = 2.0;      // Ganho proporcional
-    public double KD { get; set; } = 0.9;      // Ganho derivativo
-
-    // Parâmetros base para escala adaptativa
-    public double KP_Base { get; set; } = 2.0;
-    public double KD_Base { get; set; } = 0.9;
-    public double ReferenceVelocity { get; set; } = 200.0; // velocidade de referência (200 = estável)
-    public bool AdaptiveMode { get; set; } = true; // ativa/desativa escala automática
+    public double KP { get; set; } = 3.2;      // Ganho proporcional
+    public double KD { get; set; } = 0.85;     // Ganho derivativo
 
     // Histórico para cálculo derivativo
     private double lastError = 0;
@@ -101,44 +95,5 @@ public class PIDController
             KP *= 0.9;  // reduzir oscilação
             KD *= 1.05; // aumentar amortecimento
         }
-    }
-
-    /// <summary>
-    /// Calcula ganhos adaptativos baseado na velocidade usando escala não-linear.
-    /// Fórmula: 
-    /// KP_adaptativo = KP_base / v^0.6  (reduz com velocidade)
-    /// KD_adaptativo = KD_base * v^0.4  (aumenta levemente com velocidade)
-    /// </summary>
-    public void ApplyAdaptiveScaling(double currentVelocity)
-    {
-        if (!AdaptiveMode || currentVelocity <= 0)
-            return;
-
-        // Normaliza velocidade em relação à velocidade de referência
-        double velocidadeRelativa = currentVelocity / ReferenceVelocity;
-
-        // Aplica escala não-linear (mais conservadora em alta velocidade)
-        double scalingFactor_KP = 1.0 / Math.Pow(velocidadeRelativa, 0.6);
-        double scalingFactor_KD = Math.Pow(velocidadeRelativa, 0.4);
-
-        // Limita os fatores para evitar variações extremas
-        scalingFactor_KP = Math.Clamp(scalingFactor_KP, 0.3, 1.5);
-        scalingFactor_KD = Math.Clamp(scalingFactor_KD, 0.5, 2.0);
-
-        // Aplica os ganhos adaptativos
-        KP = KP_Base * scalingFactor_KP;
-        KD = KD_Base * scalingFactor_KD;
-    }
-
-    /// <summary>
-    /// Retorna um resumo dos ganhos atuais (base vs adaptativo)
-    /// </summary>
-    public string GetGainsSummary(double currentVelocity)
-    {
-        if (!AdaptiveMode)
-            return $"Modo FIXO: KP={KP:F2} KD={KD:F2}";
-
-        return $"Modo ADAPTATIVO: KP={KP:F2} ({KP_Base:F2}×{KP/Math.Max(0.1, KP_Base):F2}) | " +
-               $"KD={KD:F2} ({KD_Base:F2}×{KD/Math.Max(0.1, KD_Base):F2}) @ {currentVelocity:F0}px/ms";
     }
 }
