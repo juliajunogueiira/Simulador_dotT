@@ -256,7 +256,10 @@ public class SimulationEngine
         // 3. Atualizar sensores virtuais
         UpdateSensorDetections();
 
-        // 4. Calcular correção PID
+        // 4. Aplicar escala adaptativa de ganhos PD baseada na velocidade
+        PIDController.ApplyAdaptiveScaling(BaseVelocity);
+
+        // 5. Calcular correção PID
         double pidCorrection = PIDController.Calculate(error, UpdateRate);
 
         // 5. Aplicar aos motores (motores diferenciais)
@@ -437,6 +440,14 @@ public class SimulationEngine
     public string GetDiagnostic()
     {
         return PIDController.GetDiagnostic(Robot.TrackingError);
+    }
+
+    /// <summary>
+    /// Retorna informações dos ganhos PD (base vs adaptativos)
+    /// </summary>
+    public string GetGainsInfo()
+    {
+        return PIDController.GetGainsSummary(BaseVelocity);
     }
 
     /// <summary>
